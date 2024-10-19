@@ -3,7 +3,7 @@ conf()
 
 const _config = {
   port: process.env.PORT,
-  apiKey: '',
+  databaseURL: process.env.MONGO_CONNECTION_URL,
 }
 
 export const config = Object.freeze(_config)
