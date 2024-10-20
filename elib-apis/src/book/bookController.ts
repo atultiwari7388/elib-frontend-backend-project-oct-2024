@@ -194,4 +194,50 @@ const getSingleBook = async (
    }
 };
 
-export { createBook, updateBook, listBooks, getSingleBook };
+const deleteBook = async (req: Request, res: Response, next: NextFunction) => {
+   const { bookId } = req.params;
+
+   // Validate bookId
+   if (!mongoose.Types.ObjectId.isValid(bookId)) {
+      return next(createHttpError(400, "Invalid book ID format."));
+   }
+
+   const book = await bookModels.findById(bookId);
+
+   if (!book) {
+      return next(createHttpError(404, "Book not found."));
+   }
+
+   //check access
+   const _req = req as AuthRequest;
+   if (book.author.toString() != _req.userId) {
+      return next(createHttpError(403, "You can not update others book"));
+   }
+
+   //for png image
+   const coverFileSplit = book.coverImage.split("/");
+
+   const coverImagePublicId =
+      coverFileSplit.at(-2) + "/" + coverFileSplit.at(-1)?.split(".").at(-2);
+
+   // await cloudinary.uploader.destroy()
+   // console.log("coverImagePublicId", coverImagePublicId);
+
+   //for pdf file
+   const bookFileSplits = book.file.split("/");
+   const bookFiledPublicId =
+      bookFileSplits.at(-2) + "/" + bookFileSplits.at(-1);
+   // console.log("bookFiledPublicId", bookFiledPublicId);
+   //todo: add try catch block
+   await cloudinary.uploader.destroy(coverImagePublicId);
+   await cloudinary.uploader.destroy(bookFiledPublicId, {
+      resource_type: "raw",
+   });
+
+   await bookModels.deleteOne({ _id: bookId });
+
+   // res.json({ id: bookId });
+   res.sendStatus(204);
+};
+
+export { createBook, updateBook, listBooks, getSingleBook, deleteBook };
