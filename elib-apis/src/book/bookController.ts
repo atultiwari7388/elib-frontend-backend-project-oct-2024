@@ -4,6 +4,7 @@ import path from "node:path";
 import createHttpError from "http-errors";
 import bookModels from "./bookModels";
 import fs from "node:fs";
+import mongoose from "mongoose";
 import { AuthRequest } from "../middlewares/authenticate";
 
 const createBook = async (req: Request, res: Response, next: NextFunction) => {
@@ -165,4 +166,32 @@ const listBooks = async (req: Request, res: Response, next: NextFunction) => {
    }
 };
 
-export { createBook, updateBook, listBooks };
+const getSingleBook = async (
+   req: Request,
+   res: Response,
+   next: NextFunction
+) => {
+   const { bookId } = req.params;
+
+   // Validate bookId
+   if (!mongoose.Types.ObjectId.isValid(bookId)) {
+      return next(createHttpError(400, "Invalid book ID format."));
+   }
+
+   try {
+      const book = await bookModels.findById(bookId);
+
+      if (!book) {
+         return next(createHttpError(404, "Book not found."));
+      }
+
+      res.json({ book });
+   } catch (error) {
+      console.error("Error fetching book:", error);
+      return next(
+         createHttpError(500, "Internal server error while fetching the book.")
+      );
+   }
+};
+
+export { createBook, updateBook, listBooks, getSingleBook };
