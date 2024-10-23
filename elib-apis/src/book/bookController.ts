@@ -8,7 +8,7 @@ import mongoose from "mongoose";
 import { AuthRequest } from "../middlewares/authenticate";
 
 const createBook = async (req: Request, res: Response, next: NextFunction) => {
-   const { title, genre } = req.body;
+   const { title, genre, description } = req.body;
    //  console.log("files", req.files);
 
    const files = req.files as { [fieldName: string]: Express.Multer.File[] };
@@ -54,6 +54,7 @@ const createBook = async (req: Request, res: Response, next: NextFunction) => {
       //create new book
       const newBook = await bookModels.create({
          title,
+         description,
          genre,
          author: _req.userId,
          coverImage: uploadResult.secure_url,
@@ -158,7 +159,7 @@ const updateBook = async (req: Request, res: Response, next: NextFunction) => {
 const listBooks = async (req: Request, res: Response, next: NextFunction) => {
    try {
       //todo add pagination
-      const book = await bookModels.find();
+      const book = await bookModels.find().populate("author", "name");
       res.json({ book });
    } catch (error) {
       console.error(error);
@@ -179,7 +180,7 @@ const getSingleBook = async (
    }
 
    try {
-      const book = await bookModels.findById(bookId);
+      const book = await bookModels.findById(bookId).populate("author", "name");
 
       if (!book) {
          return next(createHttpError(404, "Book not found."));
